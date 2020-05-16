@@ -13,7 +13,6 @@ import ro.pub.cs.systems.eim.practicaltest02.InformationClass;
 public class ServerThread extends Thread {
     private int port = 0;
     private ServerSocket serverSocket = null;
-    private InformationClass information = null;
 
     public int getPort() {
         return port;
@@ -41,7 +40,6 @@ public class ServerThread extends Thread {
                 ioException.printStackTrace();
             }
         }
-        information = new InformationClass();
     }
 
     @Override

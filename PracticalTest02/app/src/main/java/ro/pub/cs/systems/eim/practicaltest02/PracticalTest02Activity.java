@@ -11,10 +11,20 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+
 import ro.pub.cs.systems.eim.practicaltest02.Threads.ClientThread;
 import ro.pub.cs.systems.eim.practicaltest02.Threads.ServerThread;
 
-public class PracticalTest02Activity extends AppCompatActivity {
+public class PracticalTest02Activity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private EditText serverPortEditText;
     private Button connectButton;
@@ -28,6 +38,49 @@ public class PracticalTest02Activity extends AppCompatActivity {
 
     private ServerThread serverThread = null;
     private ClientThread clientThread = null;
+
+    private GoogleMap googleMap = null;
+    private GoogleApiClient googleApiClient = null;
+
+    private void navigateToLocation(double latitude, double longitude) {
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(latitude, longitude))
+                .zoom(12)
+                .build();
+        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+    }
+
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        Log.i("[PracticalTest02]", "onConnected() callback method has been invoked");
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        Log.i("[PracticalTest02]", "onConnectionSuspended() callback method has been invoked with cause " + cause);
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.i("[PracticalTest02]", "onConnectionFailed() callback method has been invoked");
+    }
+
+    private GoogleMapsClickListener googleMapsClickListener = new GoogleMapsClickListener();
+    private class GoogleMapsClickListener implements Button.OnClickListener {
+
+        @Override
+        public void onClick(View view) {
+            String information = informationTextView.getText().toString();
+            if (information == null || information.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "[MAIN ACTIVITY] Text view is empty!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String[] tokens = information.split(", ");
+            String latitude = tokens[3];
+            String longitude = tokens[4];
+            navigateToLocation(Double.parseDouble(latitude), Double.parseDouble(longitude));
+        }
+    }
 
     private ConnectButtonClickListener connectButtonClickListener = new ConnectButtonClickListener();
     private class ConnectButtonClickListener implements Button.OnClickListener {
@@ -78,7 +131,6 @@ public class PracticalTest02Activity extends AppCompatActivity {
             );
             clientThread.start();
         }
-
     }
 
     @Override
@@ -97,6 +149,13 @@ public class PracticalTest02Activity extends AppCompatActivity {
 
         connectButton.setOnClickListener(connectButtonClickListener);
         getInformationButton.setOnClickListener(getInformationButtonClickListener);
+        imageView.setOnClickListener(googleMapsClickListener);
+
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
     }
 
     @Override
@@ -105,6 +164,33 @@ public class PracticalTest02Activity extends AppCompatActivity {
         if (serverThread != null) {
             serverThread.stopThread();
         }
+        googleApiClient = null;
         super.onDestroy();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i("[PracticalTest02]", "onStart() callback method was invoked");
+        if (googleApiClient != null && !googleApiClient.isConnected()) {
+            googleApiClient.connect();
+        }
+        if (googleMap == null) {
+            ((MapFragment)getFragmentManager().findFragmentById(R.id.google_map)).getMapAsync(new OnMapReadyCallback() {
+                @Override
+                public void onMapReady(GoogleMap readyGoogleMap) {
+                    googleMap = readyGoogleMap;
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        Log.i("[PracticalTest02]", "onStop() callback method was invoked");
+        if (googleApiClient != null && googleApiClient.isConnected()) {
+            googleApiClient.disconnect();
+        }
+        super.onStop();
     }
 }

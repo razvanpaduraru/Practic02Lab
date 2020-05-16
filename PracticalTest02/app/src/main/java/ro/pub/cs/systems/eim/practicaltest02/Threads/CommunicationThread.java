@@ -53,7 +53,12 @@ public class CommunicationThread extends Thread {
             HttpClient httpClient = new DefaultHttpClient();
             String pageSourceCode = "";
 
-            HttpGet httpGet = new HttpGet("https://api.ipgeolocationapi.com/geolocate" + "/" + ip);
+            String sign = "/";
+            if (ip.equals("myip")) {
+                sign = "?";
+            }
+
+            HttpGet httpGet = new HttpGet("https://api.ipgeolocationapi.com/geolocate" + sign + ip);
             HttpResponse httpGetResponse = httpClient.execute(httpGet);
             HttpEntity httpGetEntity = httpGetResponse.getEntity();
             if (httpGetEntity != null) {

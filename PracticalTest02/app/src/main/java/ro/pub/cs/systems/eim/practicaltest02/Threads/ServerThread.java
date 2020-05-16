@@ -7,7 +7,6 @@ import org.apache.http.client.ClientProtocolException;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 
 import ro.pub.cs.systems.eim.practicaltest02.InformationClass;
 
